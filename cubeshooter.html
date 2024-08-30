@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shooting Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            background: url('YOUR_IMAGE_URL_HERE') no-repeat center center;
+            background-size: cover;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div id="score">Score: 0</div>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            size: 30
+        };
+
+        const bullets = [];
+        const cubes = [];
+        const bulletSize = 10;
+        const bulletSpeed = 5;
+        const cubeSize = 50;
+        let score = 0;
+
+        function createCube() {
+            const x = Math.random() * (canvas.width - cubeSize);
+            const y = Math.random() * (canvas.height - cubeSize);
+            cubes.push({ x, y });
+        }
+
+        function drawPlayer() {
+            ctx.fillStyle = 'blue';
+            ctx.fillRect(player.x - player.size / 2, player.y - player.size / 2, player.size, player.size);
+        }
+
+        function drawCubes() {
+            ctx.fillStyle = 'red';
+            cubes.forEach(cube => {
+                ctx.fillRect(cube.x, cube.y, cubeSize, cubeSize);
+            });
+        }
+
+        function drawBullets() {
+            ctx.fillStyle = 'lime';
+            bullets.forEach(bullet => {
+                ctx.fillRect(bullet.x, bullet.y, bulletSize, bulletSize);
+            });
+        }
+
+        function drawArrow(mouseX, mouseY) {
+            const angle = Math.atan2(mouseY - player.y, mouseX - player.x);
+            const arrowLength = 50;
+            const arrowX = player.x + arrowLength * Math.cos(angle);
+            const arrowY = player.y + arrowLength * Math.sin(angle);
+
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(player.x, player.y);
+            ctx.lineTo(arrowX, arrowY);
+            ctx.stroke();
+        }
+
+        function updateBullets() {
+            bullets.forEach((bullet, index) => {
+                bullet.x += bullet.vx;
+                bullet.y += bullet.vy;
+                if (bullet.x < 0 || bullet.x > canvas.width || bullet.y < 0 || bullet.y > canvas.height) {
+                    bullets.splice(index, 1);
+                }
+            });
+        }
+
+        function checkCollisions() {
+            bullets.forEach((bullet) => {
+                cubes.forEach((cube, cubeIndex) => {
+                    if (
+                        bullet.x < cube.x + cubeSize &&
+                        bullet.x + bulletSize > cube.x &&
+                        bullet.y < cube.y + cubeSize &&
+                        bullet.y + bulletSize > cube.y
+                    ) {
+                        cubes.splice(cubeIndex, 1);
+                        score++;
+                        scoreElement.textContent = `Score: ${score}`;
+                    }
+                });
+            });
+        }
+
+        canvas.addEventListener('mousemove', (event) => {
+            const mouseX = event.clientX;
+            const mouseY = event.clientY;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPlayer();
+            drawCubes();
+            drawBullets();
+            drawArrow(mouseX, mouseY);
+        });
+
+        canvas.addEventListener('click', (event) => {
+            const angle = Math.atan2(event.clientY - player.y, event.clientX - player.x);
+            const vx = bulletSpeed * Math.cos(angle);
+            const vy = bulletSpeed * Math.sin(angle);
+            bullets.push({ x: player.x, y: player.y, vx, vy });
+        });
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPlayer();
+            drawCubes();
+            drawBullets();
+            updateBullets();
+            checkCollisions();
+            requestAnimationFrame(gameLoop);
+        }
+
+        setInterval(createCube, 1000);
+        gameLoop();
+    </script>
+</body>
+</html>
